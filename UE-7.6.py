@@ -10,20 +10,20 @@ if len(sys.argv)==1:
 
 #-----------Globals------------
 PI=np.pi
-PATH="./"
+PATH="./lj-canonical/"
 N=int(sys.argv[1])
-INFILE="data.txt"
+INFILE="Paircorrf.txt"
 rho=float(sys.argv[2])
 
 #----------------Routines-----------------
 def Read():
 	data=[]
 	try:
-		x=[]
-		y=[]
+		x=[0]
+		y=[0]
 		text= open(PATH+INFILE,'r')
 		data=text.readlines()
-		for line in data[1:]:
+		for line in data[2:]:
 			f=line.split()
 			x.append(f[0])	
 			y.append(f[1])
@@ -37,6 +37,8 @@ def Read():
 #--------------------Main---------------------------------
 def main():
 	[r,g]=Read()
+	plt.plot(r,g)
+	plt.show()
 	imax=g.index(max(g))
 	g_=g[imax:]
 	imin2=g_.index(min(g_))+imax-1
