@@ -78,7 +78,7 @@ module mcme_subm
   implicit none
 
   private
-  public::getcf,means,mgeom,move,pbc,putcf,tables,uinit
+  public::getcf,means,mgeom,move,pbc,printag,putcf,tables,uinit
 
 contains
 
@@ -629,6 +629,18 @@ contains
 
   end subroutine means
 
+  subroutine printag()
+    integer::i
+    real::radius
+    open(unit=14,file="ag.txt",status="replace", action="write", form="formatted")
+    do i=1,n-1
+      radius=dr*i
+      write(unit=14,FMT="(2(F10.7,1x))"),radius,real(ag(1,i))
+    end do
+    close(unit=14)
+    return
+  end subroutine printag
+
 !**********************************************************************!
 
   subroutine putcf()
@@ -693,8 +705,8 @@ program mcme
     call means()
   end do
 
+  call printag()
 ! Write checkpoint file
-
   call putcf()
 
 end program mcme

@@ -8,6 +8,7 @@ def read():
 	filearray=FortranFile(BinaryData,'r')
 	print filearray
 	f=filearray.read_reals()
+	filearray.close()
 	return f
 
 
