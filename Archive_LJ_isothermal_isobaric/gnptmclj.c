@@ -15,7 +15,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "getval.h"
+#include "getval.c"
 
 #define NL '\n'
 #define BSIZE 80

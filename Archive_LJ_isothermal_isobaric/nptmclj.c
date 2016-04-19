@@ -403,7 +403,7 @@ void means() {
   /* Print control variables */
 
   if((ntprint>0)&&(nt%ntprint==0)) {
-    printf(" %10d %12.5e %12.5e %12.5e %12.5e %12.5e\n",\
+    printf("\t%10d\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",\
 	   nt,(double)naccp/max(ntryp,1),(double)naccv/max(ntryv,1),\
 	   su,v,n/v);
   }
