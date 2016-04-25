@@ -1,0 +1,213 @@
+!**********************************************************************!
+!
+! File: zisomdlj.f90
+!
+! Gaussian isokinetic (NVT) Molecular Dynamics of Lennard-Jonesium
+! Re-initialize checkpoint file
+!
+! 03-Jun-1999 (MN)
+! 05-May-2012
+!
+!**********************************************************************!
+
+module getval_m
+
+!**********************************************************************!
+
+! Generic subroutine: read item from standard input/keep old value on
+! hitting return
+
+  implicit none
+
+  private::getint,getreal,getstrg
+  public::getval
+
+  interface getval
+    module procedure getint,getreal,getstrg
+  end interface
+
+  character(len=80),private::line
+
+contains
+
+!**********************************************************************!
+
+  subroutine getint(intval)
+
+!**********************************************************************!
+
+    integer,intent(in out)::intval
+
+    read(unit=*,fmt="(a)") line
+    if(len_trim(adjustl(line))>0) then
+      read(unit=line,fmt=*) intval
+    end if
+
+    return
+
+  end subroutine getint
+
+!**********************************************************************!
+
+  subroutine getreal(realval)
+
+!**********************************************************************!
+
+    real,intent(in out)::realval
+
+    read(unit=*,fmt="(a)") line
+    if(len_trim(adjustl(line))>0) then
+      read(unit=line,fmt=*) realval
+    end if
+
+    return
+
+  end subroutine getreal
+
+!**********************************************************************!
+
+  subroutine getstrg(strgval)
+
+!**********************************************************************!
+
+    character(len=*),intent(in out)::strgval
+
+    read(unit=*,fmt="(a)") line
+    if(len_trim(adjustl(line))>0) then
+      read(unit=line,fmt="(a)") strgval
+    end if
+
+    return
+
+  end subroutine getstrg
+
+end module getval_m
+
+!**********************************************************************!
+
+program zisomdlj
+
+!**********************************************************************!
+
+  use getval_m
+
+  implicit none
+
+  integer,parameter::iin=1,iout=2
+
+  character(len=80)::fname
+  integer::n,ncor,nt,ntaskip,ntcskip,ntjob,ntorig,ntprint
+  real::fact,rhon,sk
+  real::dr,dt,rho,t
+  real,dimension(:),allocatable::vx,vy,vz,x,y,z
+
+! Read checkpoint file
+
+  fname="isomdlj_out.dat"
+  write(unit=*,fmt="(a)",advance="no") &
+       "          infile=[isomdlj_out.dat] "
+  call getval(fname)
+
+  open(unit=iin,file=fname,status="old",action="read", &
+       form="unformatted",position="rewind")
+
+! Simulation parameters
+
+  read(unit=iin) n,ncor,nt,ntaskip,ntcskip,ntjob,ntorig,ntprint
+  read(unit=iin) dr,dt,rho,t
+
+! Allocate arrays
+
+  allocate(vx(n),vy(n),vz(n),x(n),y(n),z(n))
+
+! Positions & velocities
+
+  read(unit=iin) x,y,z
+  read(unit=iin) vx,vy,vz
+
+  close(unit=iin)
+
+  rhon=rho
+
+! User input
+
+  write(unit=*,fmt="(a,i16)") &
+       "               n=",n
+  write(unit=*,fmt="(a,f15.5,a)",advance="no") &
+       "             rho=[",rho,"] "
+  call getval(rhon)
+  write(unit=*,fmt="(a,f15.5,a)",advance="no") &
+       "               t=[",t,"] "
+  call getval(t)
+  write(unit=*,fmt="(a,f15.5,a)",advance="no") &
+       "              dt=[",dt,"] "
+  call getval(dt)
+  write(unit=*,fmt="(a,f15.5,a)",advance="no") &
+       "              dr=[",dr,"] "
+  call getval(dr)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       "         ntaskip=[",ntaskip,"] "
+  call getval(ntaskip)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       " ntprint/ntaskip=[",ntprint,"] "
+  call getval(ntprint)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       "         ntcskip=[",ntcskip,"] "
+  call getval(ntcskip)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       "    ncor/ntcskip=[",ncor,"] "
+  call getval(ncor)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       "  ntorig/ntcskip=[",ntorig,"] "
+  call getval(ntorig)
+  write(unit=*,fmt="(a,i15,a)",advance="no") &
+       "           ntjob=[",ntjob,"] "
+  call getval(ntjob)
+
+! Rescale positions
+
+  if(rhon/=rho) then
+    fact=(rho/rhon)**(1.0/3.0)
+    rho=rhon
+    x=fact*x
+    y=fact*y
+    z=fact*z
+  end if
+
+! Zero net momentum & set initial temperature
+
+  vx=vx-sum(vx)/n
+  vy=vy-sum(vy)/n
+  vz=vz-sum(vz)/n
+  sk=0.5*sum(vx**2+vy**2+vz**2)
+  fact=sqrt(1.5*n*t/sk)
+  vx=fact*vx
+  vy=fact*vy
+  vz=fact*vz
+
+! Write new startup file
+
+  fname="isomdlj_in.dat"
+  write(unit=*,fmt="(a)",advance="no") &
+       "         outfile=[ isomdlj_in.dat] "
+  call getval(fname)
+
+  nt=0
+
+  open(unit=iout,file=fname,status="replace",action="write", &
+       form="unformatted")
+
+  write(unit=iout) n,ncor,nt,ntaskip,ntcskip,ntjob,ntorig,ntprint
+  write(unit=iout) dr,dt,rho,t
+  write(unit=iout) x,y,z
+  write(unit=iout) vx,vy,vz
+
+  close(unit=iout)
+
+! Deallocate arrays
+
+  deallocate(vx,vy,vz,x,y,z)
+
+end program zisomdlj
+
+!**********************************************************************!

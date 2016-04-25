@@ -408,7 +408,7 @@ void means() {
 /**********************************************************************/
 
   int i,ir,j;
-  double dx,dy,dz,r2,rm6,su,sw;
+  double dx,dy,dz,r2,rm6,su,sw,p;
 
   /* Potential energy, virial & g(r) */
 
@@ -445,11 +445,12 @@ void means() {
   /* Print control variables */
 
   if((ntprint>0)&&(nt%ntprint==0)) {
-    printf("%d %lf %lf %lf %d %lg %lg\n",nt,\
+    p=n/v*(t-sw/3.0);
+    printf("%d %lf %lf %lf %d %lg %lg %lg\n",nt,\
 	   naccc/max(pcre*n*ntskip,1.0),\
 	   naccd/max(pcre*n*ntskip,1.0),\
 	   naccm/max((1.0-2.0*pcre)*n*ntskip,1.0),\
-	   n,n/v,su/n);
+	   n,n/v,su/n,p);
   }
 
   /* Accumulate averages */
