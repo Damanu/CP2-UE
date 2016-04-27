@@ -351,7 +351,7 @@ void means() {
   /* energies, pressure                                               */
 
   if((ntprint>0)&&((nt/ntaskip)%ntprint==0)) {
-    printf(" %10d %12.5le %12.5le %12.5le %12.5le %12.5le\n",nt,\
+    printf("%10d\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\n",nt,\
 	   2.0*(sk/n)/3.0,sk/n,su/n,(sk+su)/n,rho*(2.0*sk-sw)/(3*n));
   }
 
