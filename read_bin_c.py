@@ -47,6 +47,11 @@ def main():
 	for x in ag_[0][1:]:
 		g_.append(x/(data_["ntjob"]*2*np.pi*(i*data_["dr"])**2*data_["dr"]*rho*n))
 		i+=1
+	f=open("read_out.txt",'w')
+	i=0
+	while i<min(len(g),len(g_)):
+		f.write("{0}	{1}	{2}\n".format(float(i)*float(dr),float(g[i]),float(g_[i])))
+		i+=1
 	plt.plot(np.linspace(0,float(ndr)*float(dr),len(g)),g)
 	plt.plot(np.linspace(0,float(ndr)*float(dr),len(g_)),g_)
 	plt.show()
