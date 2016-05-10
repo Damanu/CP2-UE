@@ -269,7 +269,7 @@ void vacf() {
 
   /* Store current values in ring buffer (index nt2) */
 
-  nt2=(nt/ntcskip-1)%(ncor+1);
+  nt2=(nt/ntcskip-1)%(ncor+1);//rest (number of ntcskips nt has to run throught) divided by ncor ...  
 
   for(i=0;i<=n-1;i++) {
     vxt[nt2][i]=vx[i];
@@ -280,15 +280,14 @@ void vacf() {
   /* Correlate with values at previous times (index nt1) */
   /* k = time lag                                        */
 
-  if((nt/ntcskip>ncor)&&((nt/ntcskip-1)%ntorig==0)) {
+  if((nt/ntcskip>ncor)&&((nt/ntcskip-1)%ntorig==0)) { //if nt bigger than correlation length and nt has run through ntorgi(or multi) ntcskips. 
     for(k=0;k<=ncor;k++) {
       nt1=(nt2-k+ncor+1)%(ncor+1);
       s=0.0;
       for(i=0;i<=n-1;i++) {
-	s=s+(vxt[nt1][i]*vxt[nt2][i]+vyt[nt1][i]*vyt[nt2][i]+\
-	     vzt[nt1][i]*vzt[nt2][i]);
+	s=s+(vxt[nt1][i]*vxt[nt2][i]+vyt[nt1][i]*vyt[nt2][i]+vzt[nt1][i]*vzt[nt2][i]);//calculate v(t0)*v(t1) for all particles 
       }
-      acf[k]=acf[k]+s/n;
+      acf[k]=acf[k]+s/n; //add <v²> to the autocorrelation function at position k (the time k)
     }
   }
 
@@ -436,6 +435,18 @@ void putcf() {
 
 }
 
+void print_acf(){
+  FILE *fpo;
+  int i;
+  fpo=fopen("acf_out.txt","w");
+  if(nt/ntcskip>0) {
+    if(nt/ntcskip>ncor) {
+      for(i=0;i<=ncor;i++){
+        fprintf(fpo,"%d\t%f\n",(float)i*,acf[i]);
+      }
+    }
+  }
+}
 /**********************************************************************/
 
 int main() {
@@ -463,6 +474,7 @@ int main() {
 
     if(nt%ntcskip==0) {   /* Calculate VACF with sampling rate    */
       vacf();             /* 1/(ntcskip*dt), using "time origins" */
+      print_acf();
     }                     /* ntorig time steps apart              */
 
     if(nt%ntaskip==0) {   /* Calculate averages every ntaskip */
