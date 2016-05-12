@@ -64,7 +64,7 @@ program amdlj
 ! Positions & (skip) velocities
 
   read(unit=iin) x,y,z
-  read(unit=iin) !vx,vy,vz
+  read(unit=iin)! vx,vy,vz
 
 ! Accumulated averages
 

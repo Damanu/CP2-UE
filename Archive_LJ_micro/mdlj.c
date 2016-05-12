@@ -287,7 +287,7 @@ void vacf() {
       for(i=0;i<=n-1;i++) {
 	s=s+(vxt[nt1][i]*vxt[nt2][i]+vyt[nt1][i]*vyt[nt2][i]+vzt[nt1][i]*vzt[nt2][i]);//calculate v(t0)*v(t1) for all particles 
       }
-      acf[k]=acf[k]+s/n; //add <v²> to the autocorrelation function at position k (the time k)
+      acf[k]=acf[k]+s/n; //add <v(0)²*v(t)²> to the autocorrelation function at position k (the time k)
     }
   }
 
@@ -474,7 +474,6 @@ int main() {
 
     if(nt%ntcskip==0) {   /* Calculate VACF with sampling rate    */
       vacf();             /* 1/(ntcskip*dt), using "time origins" */
-      print_acf();
     }                     /* ntorig time steps apart              */
 
     if(nt%ntaskip==0) {   /* Calculate averages every ntaskip */

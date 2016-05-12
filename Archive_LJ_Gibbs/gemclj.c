@@ -710,12 +710,12 @@ void means() {
   rho2=n2/v2;
 
   if((ntprint>0)&&(nt%ntprint==0)) {
-    printf(" %10d %12.5le %12.5le %12.5le %12.5le",nt,\
+    printf("%d\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t",nt,\
 	   (double)naccp1/max(ntryp1,1),\
 	   (double)naccp2/max(ntryp2,1),\
 	   (double)nacct/max(ntryt1+ntryt2,1),\
 	   (double)naccv/max(ntryv,1));
-    printf(" %12.5le %12.5le %12.5le %12.5le\n",\
+    printf("%12.5le\t%12.5le\t%12.5le\t%12.5le\n",\
 	   su1,su2,rho1,rho2);
   }
 
@@ -857,6 +857,7 @@ int main() {
 
   /* Do ntskip*ntjob passes (transfers/volume changes/displacements) */
 
+ // printf("nt\tacc1\tacc2\tacct\taccv\tsu1\tsu2\trho1\trho2\n");
   for(i=1;i<=ntjob;i++) {
     nt=nt+1;
     for(j=1;j<=ntskip*n;j++) {
