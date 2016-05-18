@@ -328,7 +328,8 @@ void means() {
       if(r2<r2max) {                   /* In range? */
 	if(r2<rc2) {
 	  rm6=1.0/(r2*r2*r2);
-	  su=su+(4.0*rm6-4.0)*rm6;     /* Potential energy */
+	  su=su+((4.0*rm6-4.0)*rm6-(4.0*1/(rc2*rc2*rc2)-4.0)*1.0/(rc2*rc2*rc2))*\
+          (sqrt(rc2)-sqrt(r2))*(sqrt(rc2)-sqrt(r2))/((sqrt(rc2)-sqrt(r2))*(sqrt(rc2)-sqrt(r2))+0.01);     /*smooth shifted Potential energy */
 	  sw=sw+(24.0-48.0*rm6)*rm6;   /* Virial           */
 	}
 	k=(int)(sqrt(r2)*drm1);

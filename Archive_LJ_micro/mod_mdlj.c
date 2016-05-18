@@ -1,3 +1,10 @@
+/*********************************************************************
+Modiefied version
+the energy is conserved at machine precision 
+using: shifted forces, smooth shifted potentials, extension of hamiltonian like in paper : Energy conservation in molecular dynamics simulations
+of classical systems, Søren Toxvaerd, Ole J. Heilmann, and Jeppe C. Dyre, THE JOURNAL OF CHEMICAL PHYSICS 136, 224106 (2012)
+Exercise 19.5.2016
+**********************************************************************/
 /**********************************************************************
  *
  * File: mdlj.c
@@ -163,9 +170,10 @@ void force() {
 /**********************************************************************/
 
   int i,j;
-  double df,dx,dy,dz,r2,rm6;
+  double df,dx,dy,dz,r2,rm6,dfc;
 
   /* Initialize forces */
+  dfc=(24.0-48.0*1/(rc2*rc2*rc2))*1/(rc2*rc2*rc2*rc2); // force at cutoff
 
   for(i=0;i<=n-1;i++) {
     fx[i]=0.0;
@@ -186,7 +194,7 @@ void force() {
       r2=dx*dx+dy*dy+dz*dz;
       if(r2<rc2) {                   /* In range? */
 	rm6=1.0/(r2*r2*r2);
-	df=(24.0-48.0*rm6)*rm6/r2;
+	df=(24.0-48.0*rm6)*rm6/r2-dfc; //shifted force
 	fx[i]=fx[i]+df*dx;
 	fx[j]=fx[j]-df*dx;           /* Actio=reactio */
 	fy[i]=fy[i]+df*dy;
@@ -302,7 +310,7 @@ void means() {
 /**********************************************************************/
 
   int i,j,k;
-  double dx,dy,dz,r2,rm6,sk,su,sw;
+  double dx,dy,dz,r2,rm6,sk,su,sw,J,shess,sf;
 
   /* Kinetic energy */
 
@@ -311,7 +319,8 @@ void means() {
     sk=sk+(vx[i]*vx[i]+vy[i]*vy[i]+vz[i]*vz[i]);
   }
   sk=0.5*sk;
-
+ //third therm (Hessian) of the modified hamiltonian
+  shess=0.0;
   /* Potential energy, virial & g(r) */
 
   su=su0;
@@ -328,7 +337,10 @@ void means() {
       if(r2<r2max) {                   /* In range? */
 	if(r2<rc2) {
 	  rm6=1.0/(r2*r2*r2);
-	  su=su+(4.0*rm6-4.0)*rm6;     /* Potential energy */
+	  J=(12.0*13.0*rm6-6.0*7.0)*rm6/r2;
+          shess=shess+dt*dt/12.0*(vx[i]*vx[i]+vy[i]*vy[i]+vz[i]*vz[i])*J;
+	  su=su+((4.0*rm6-4.0)*rm6-(4.0*1/(rc2*rc2*rc2)-4.0)*1.0/(rc2*rc2*rc2))*\
+          (sqrt(rc2)-sqrt(r2))*(sqrt(rc2)-sqrt(r2))/((sqrt(rc2)-sqrt(r2))*(sqrt(rc2)-sqrt(r2))+0.01);     /*smooth shifted Potential energy */
 	  sw=sw+(24.0-48.0*rm6)*rm6;   /* Virial           */
 	}
 	k=(int)(sqrt(r2)*drm1);
@@ -338,6 +350,13 @@ void means() {
       }
     }
   }
+  shess=shess+dt*dt/12.0*(vx[n-1]*vx[n-1]+vy[n-1]*vy[n-1]+vz[n-1]*vz[n-1])*J;
+  //fourth therm (force)
+  sf=0.0;
+  for(i=0;i<=n-1;i++) {
+    sf=sf+dt*dt/24.0*(fx[i]*fx[i]+fy[i]*fy[i]+fz[i]*fz[i]);
+  }
+
 
   /* Accumulate averages */
 
@@ -351,7 +370,7 @@ void means() {
 
   if((ntprint>0)&&((nt/ntaskip)%ntprint==0)) {
     printf("%10d\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\n",nt,\
-	   2.0*(sk/n)/3.0,sk/n,su/n,(sk+su)/n,rho*(2.0*sk-sw)/(3*n));
+	   2.0*(sk/n)/3.0,sk/n,su/n,(sk+su+shess+sf)/n,rho*(2.0*sk-sw)/(3*n));
   }
 
   return;
