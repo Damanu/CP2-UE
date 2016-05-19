@@ -1,0 +1,5 @@
+set title "Total Energy vs. Time"
+set xlabel "Time"
+set ylabel "Energy"
+plot "UE-19.05.16_data.txt" using 1:5 w l title "orig", "UE-19.05.16_sSP_data.txt" using ($1):($5-0.50469) w l title "SP", "UE-19.05.16_SF_sSP_data.txt" u ($1):($5 - 0.508269) w l title "SF-sSP-SH"
+pause -1 "Hit any key to continue"

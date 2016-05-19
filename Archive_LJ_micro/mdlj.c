@@ -435,18 +435,6 @@ void putcf() {
 
 }
 
-void print_acf(){
-  FILE *fpo;
-  int i;
-  fpo=fopen("acf_out.txt","w");
-  if(nt/ntcskip>0) {
-    if(nt/ntcskip>ncor) {
-      for(i=0;i<=ncor;i++){
-        fprintf(fpo,"%d\t%f\n",(float)i*,acf[i]);
-      }
-    }
-  }
-}
 /**********************************************************************/
 
 int main() {

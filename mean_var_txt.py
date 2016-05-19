@@ -1,6 +1,5 @@
 #usr/bin/python!
-#Calculates the fouriertransformed of a dataset in a text file 
-#and writes it into a txt file named fft_out.txt
+#Calculates the mean and standard deviation of a txt file column 
 
 import sys
 import numpy as np
@@ -8,7 +7,7 @@ if len(sys.argv)!=3:
 	print "No Argument given\nArguments: Filename xcolumn"
 	sys.exit()
 FILE=sys.argv[1]
-XCOL=int(sys.argv[2])
+XCOL=int(sys.argv[2])-1
 
 def main():
 	f=open(FILE,'r')
