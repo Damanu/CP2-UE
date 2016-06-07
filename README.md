@@ -3,7 +3,7 @@ Exercises for Computational Physics 2 simulations
 
 In this repository exercises for Computational Physics 2 are saved. 
 New simulations will be added during the semester, till all exercises are online.
-The code will be written either in python or c. 
+The code will be written either in python, fortran90 or c. 
 
 Course Overview:
 
