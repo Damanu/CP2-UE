@@ -35,7 +35,7 @@ void getcf()	{
 	v_1=cos(dt);
 }
 void move()	{
-	F=x_1;	//force of harmonic osci
+	F=-x_1;	//force of harmonic osci
 	x=2*x_1-x_0+dt*dt*F;	//verlet algorithm
 
 	v_1=(x-x_0)/(2.0*dt);	//get velocity (for energy)
@@ -46,7 +46,7 @@ void move()	{
 }
 void means()	{
 	u=(v_1*v_1+x_1*x_1)/2.0; //total energy
-	printf("%10d\t%12.5le\t%12.5le\n",nt,u,x_1);
+	printf("%10d\t%12.5le\t%12.5le\t%12.5le\n",nt,u,x_1,v_1);
 	return;
 }		
 

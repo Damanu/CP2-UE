@@ -35,10 +35,10 @@ void getcf()	{
 //	v_1=cos(dt);
 }
 void move()	{
-	double F_0, F_1;
+	double F_0, F_1, v_half;
 
 	F_0=-x_0;
-	x=x_0+dt*v_0+dt*F_0/2.0;
+	x=x_0+dt*v_0+dt*dt*F_0/2.0;
 	F_1=-x;
 	v=v_0+dt*(F_0+F_1)/2.0;
 	
@@ -49,7 +49,7 @@ void move()	{
 }
 void means()	{
 	u=(v_0*v_0+x_0*x_0)/2.0; //total energy
-	printf("%10d\t%12.5le\t%12.5le\n",nt,u,x_0);
+	printf("%10d\t%12.5le\t%12.5le\t%12.5le\n",nt,u,x_0,v_0);
 	return;
 }		
 

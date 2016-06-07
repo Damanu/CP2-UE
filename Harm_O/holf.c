@@ -47,7 +47,7 @@ void move()	{
 }
 void means()	{
 	u=(v_1*v_1+x_1*x_1)/2.0; //total energy
-	printf("%10d\t%12.5le\t%12.5le\n",nt,u,x_0);
+	printf("%10d\t%12.5le\t%12.5le\t%12.5le\n",nt,u,x_1,v_1);
 	return;
 }		
 
