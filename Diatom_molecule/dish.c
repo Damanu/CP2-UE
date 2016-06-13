@@ -21,201 +21,366 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 /* Global Variables & Parameters */
-int i,n;
-double V,l,d12=1;
-double roh,t,dt,eps;
+int n=1,nt=0,ntjob=10000;
+double V,l,d12=10;
+double roh=0.5,t=100,dt=1,eps=0.000001;
+double lamv;
 
-/* allcate arrays */
-v1x=(double*)malloc(n*sizeof(double));
-v1y=(double*)malloc(n*sizeof(double));
-v1z=(double*)malloc(n*sizeof(double));
+double *vx_1,*vy_1,*vz_1,*vx_2,*vy_2,*vz_2, *vx_1un,*vy_1un,*vz_1un,*vx_2un, *vy_2un, *vz_2un, *vx_1ul,*vy_1ul,*vz_1ul,*vx_2ul, *vy_2ul, *vz_2ul,*x_1,*y_1,*z_1,*x_2,*y_2,*z_2, *x_1ul, *y_1ul, *z_1ul,*x_2ul, *y_2ul, *z_2ul, *x_1un, *y_1un, *z_1un,*x_2un, *y_2un, *z_2un;
+double *gx_1,*gy_1,*gz_1,*gx_2,*gy_2,*gz_2;
+double *lam,*sigu,*M;
 
-v2x=(double*)malloc(n*sizeof(double));
-v2y=(double*)malloc(n*sizeof(double));
-v2z=(double*)malloc(n*sizeof(double));
-
-v1xul=(double*)malloc(n*sizeof(double));
-v1yul=(double*)malloc(n*sizeof(double));
-v1zul=(double*)malloc(n*sizeof(double));
-
-v2xul=(double*)malloc(n*sizeof(double));
-v2yul=(double*)malloc(n*sizeof(double));
-v2zul=(double*)malloc(n*sizeof(double));
-
-x1=(double*)malloc(n*sizeof(double));
-y1=(double*)malloc(n*sizeof(double));
-z1=(double*)malloc(n*sizeof(double));
-
-x2=(double*)malloc(n*sizeof(double));
-y2=(double*)malloc(n*sizeof(double));
-z2=(double*)malloc(n*sizeof(double));
-
-x1ul=(double*)malloc(n*sizeof(double));
-y1ul=(double*)malloc(n*sizeof(double));
-z1ul=(double*)malloc(n*sizeof(double));
-
-x2ul=(double*)malloc(n*sizeof(double));
-y2ul=(double*)malloc(n*sizeof(double));
-z2ul=(double*)malloc(n*sizeof(double));
-
-x1un=(double*)malloc(n*sizeof(double));
-y1un=(double*)malloc(n*sizeof(double));
-z1un=(double*)malloc(n*sizeof(double));
-
-x2un=(double*)malloc(n*sizeof(double));
-y2un=(double*)malloc(n*sizeof(double));
-z2un=(double*)malloc(n*sizeof(double));
-
-gx1=(double*)malloc(n*sizeof(double));
-gy1=(double*)malloc(n*sizeof(double));
-gz1=(double*)malloc(n*sizeof(double));
-
-gx2=(double*)malloc(n*sizeof(double));
-gy2=(double*)malloc(n*sizeof(double));
-gz2=(double*)malloc(n*sizeof(double));
-
-/* calculate box measurments and other parameters */
-l=cbrt(n/rho);
-V=l*l*l;
-
-v_mean=sqrt(3*t)
-
-void init() {
-	for (i=0;i<n;i++) {
-		//first atom of molecule
-		vx1[i]=drand48()-0.5;
-		vy1[i]=drand48()-0.5;
-		vz1[i]=drand48()-0.5;
-		
-		x1[i]=drand48()*l;
-		y1[i]=drand48()*l;
-		z1[i]=drand48()*l;
-		
-		x1ul[i]=drand48()*l;
-		y1ul[i]=drand48()*l;
-		z1ul[i]=drand48()*l;
-
-		//second atom of molecule
-		vx2[i]=drand48()-0.5;
-		vy2[i]=drand48()-0.5;
-		vz2[i]=drand48()-0.5;
-	
-		x2[i]=drand48()*l;
-		y2[i]=drand48()*l;
-		z2[i]=drand48()*l;
-
-		//recalculate the position of the second atom for right distances between them
-		x2[i]=d12*(x2[i]-x1[i])/(sqrt((x2[i]-x1[i])*(x2[i]-x1[i])+(y2[i]-y1[i])*(y2[i]-y1[i])+(z2[i]-z1[i])*(z2[i]-z1[i])));
-		y2[i]=d12*(y2[i]-y1[i])/(sqrt((x2[i]-x1[i])*(x2[i]-x1[i])+(y2[i]-y1[i])*(y2[i]-y1[i])+(z2[i]-z1[i])*(z2[i]-z1[i])));
-		z2[i]=d12*(z2[i]-z1[i])/(sqrt((x2[i]-x1[i])*(x2[i]-x1[i])+(y2[i]-y1[i])*(y2[i]-y1[i])+(z2[i]-z1[i])*(z2[i]-z1[i])));
-
-		//recalculate velocities for the right temperature
-		vx1[i]=v_mean*vx1[i]/sum(vx1);
-		vy1[i]=v_mean*vy1[i]/sum(vy1);
-		vz1[i]=v_mean*vz1[i]/sum(vz1);
-		
-		vx2[i]=v_mean*vx2[i]/sum(vx2);
-		vy2[i]=v_mean*vy2[i]/sum(vy2);
-		vz2[i]=v_mean*vz2[i]/sum(vz2);
-	}	
-}
-double sum(double* array) {
+double summe(double* array) {
+	int i;
 	double sum=0;
 	for (i=0;i<n;i++) {
 		sum = sum + array[i]; 
 	}
 	return sum;
 }
+void init() {
+	int i;
+	double v_mean;
+	/* calculate box measurments and other parameters */
+	l=cbrt(n/roh);
+	V=l*l*l;
+	v_mean=sqrt(3*t);
 
-void rattle() {
-	for(i=0;i<n;i++) {
-		sigu[i]=sqrt((x2un[i]-x1un[i])*(x2un[i]-x1un[i])+(y2un[i]-y1un[i])*(y2un[i]-y1un[i])+(z2un[i]-z1un[i])*(z2un[i]-z1un[i]))-d12;
-	}
-	M=
+	for (i=0;i<n;i++) {
+		
+		//first atom of molecule
+		vx_1[i]=drand48()-0.5;
+		vy_1[i]=drand48()-0.5;
+		vz_1[i]=drand48()-0.5;
+	
+	/*	vx_1[i]=0;
+		vy_1[i]=0;
+		vz_1[i]=0;
+	*/	
+		x_1[i]=drand48()*l;
+		y_1[i]=drand48()*l;
+		z_1[i]=drand48()*l;
+		
+/*		x_1[i]=0.0;
+		y_1[i]=1.0;
+		z_1[i]=0.0;
+*/		
+//		x_1ul[i]=drand48()*l;
+//		y_1ul[i]=drand48()*l;
+//		z_1ul[i]=drand48()*l;
+
+		//second atom of molecule
+		vx_2[i]=drand48()-0.5;
+		vy_2[i]=drand48()-0.5;
+		vz_2[i]=drand48()-0.5;
+	
+	//	vx_2[i]=0;
+	//	vy_2[i]=1;
+	//	vz_2[i]=0;
+	
+		x_2[i]=drand48()*l;
+		y_2[i]=drand48()*l;
+		z_2[i]=drand48()*l;
+
+/*		x_2[i]=0.0;
+		y_2[i]=0.0;
+		z_2[i]=0.0;
+*/
+		//recalculate the position of the second atom for right distances between them
+//		x_2[i]=d12*(x_2[i]-x_1[i])/(sqrt((x_2[i]-x_1[i])*(x_2[i]-x_1[i])+(y_2[i]-y_1[i])*(y_2[i]-y_1[i])+(z_2[i]-z_1[i])*(z_2[i]-z_1[i])));
+	//	y_2[i]=d12*(y_2[i]-y_1[i])/(sqrt((x_2[i]-x_1[i])*(x_2[i]-x_1[i])+(y_2[i]-y_1[i])*(y_2[i]-y_1[i])+(z_2[i]-z_1[i])*(z_2[i]-z_1[i])));
+	//	z_2[i]=d12*(z_2[i]-z_1[i])/(sqrt((x_2[i]-x_1[i])*(x_2[i]-x_1[i])+(y_2[i]-y_1[i])*(y_2[i]-y_1[i])+(z_2[i]-z_1[i])*(z_2[i]-z_1[i])));
+
+		//recalculate velocities for the right temperature
+/*		vx_1[i]=v_mean*vx_1[i]/summe(vx_1);
+		vy_1[i]=v_mean*vy_1[i]/summe(vy_1);
+		vz_1[i]=v_mean*vz_1[i]/summe(vz_1);
+		
+		vx_2[i]=v_mean*vx_2[i]/summe(vx_2);
+		vy_2[i]=v_mean*vy_2[i]/summe(vy_2);
+		vz_2[i]=v_mean*vz_2[i]/summe(vz_2);*/
+//		printf("%10d\t%12.5le\t%12.5le\t%12.5le\t\t%12.5le\t%12.5le\t%12.5le\t\n",i,x_1[i],y_1[i],z_1[i],x_2[i],y_2[i],z_2[i]);
+//		printf("%10d\t%12.5le\t%12.5le\t%12.5le\t\t%12.5le\t%12.5le\t%12.5le\t\n",i,vx_1[i],vy_1[i],vz_1[i],vx_2[i],vy_2[i],vz_2[i]);
+	}	
 }
 
+
+double absval(double x,double y,double z) {
+	int i;
+	double val; 
+	val=sqrt(x*x+y*y+z*z);
+//	printf("%12.5le\n",val);
+	return val;
+}
+
+void get_lam() {
+	int i;
+	for(i=0;i<n;i++) {
+		sigu[i]=sqrt((x_2ul[i]-x_1ul[i])*(x_2ul[i]-x_1ul[i])+(y_2ul[i]-y_1ul[i])*(y_2ul[i]-y_1ul[i])+(z_2ul[i]-z_1ul[i])*(z_2ul[i]-z_1ul[i]))-d12;
+	}
+	for(i=0;i<n;i++) {
+		M[i]=((x_1ul[i]-x_2ul[i])*(x_1[i]-x_2[i])+(y_1ul[i]-y_2ul[i])*(y_1[i]-y_2[i])+(z_1ul[i]-z_2ul[i])*(z_1[i]-z_2[i])+(x_2ul[i]-x_1ul[i])*(x_2[i]-x_1[i])+(y_2ul[i]-y_1ul[i])*(y_2[i]-y_1[i])+(z_2ul[i]-z_1ul[i])*(z_2[i]-z_1[i]))/(absval(x_2ul[i]-x_1ul[i],y_2ul[i]-y_1ul[i],z_2ul[i]-z_1ul[i])*absval(x_2[i]-x_1[i],y_2[i]-y_1[i],z_2[i]-z_1[i]));
+	}
+	for(i=0;i<n;i++) {
+		lam[i]=sigu[i]/(M[i]*dt*dt);
+	}
+}
+void get_lamv() {
+	int i;
+	double vx_12,vy_12,vz_12,x_12,y_12,z_12;
+	for(i=0;i<n;i++) {
+		vx_12=vx_1ul[i]-vx_2ul[i];
+		vy_12=vy_1ul[i]-vy_2ul[i];
+		vz_12=vz_1ul[i]-vz_2ul[i];
+		
+		x_12=x_1ul[i]-x_2ul[i];
+		y_12=y_1ul[i]-y_2ul[i];
+		z_12=z_1ul[i]-z_2ul[i];
+		
+		lamv=(vx_12*x_12+vy_12*y_12+vz_12*z_12)/(2*(x_12*x_12+y_12*y_12+z_12*z_12));
+		
+		
+		
+	}
+}
 void grad_sig() {
+	int i;
+	double d12i;
 	//calculate gradient of sigma for both atoms
 	for(i=0;i<n;i++) {
 
-	d12i=sqrt((x2ul[i]-x1ul[i])*(x2ul[i]-x1ul[i])+(y2ul[i]-y1ul[i])*(y2ul[i]-y1ul[i])+(z2ul[i]-z1ul[i])*(z2ul[i]-z1ul[i])); //real distance of atoms
+		//	d12i=sqrt((x_2ul[i]-x_1ul[i])*(x_2ul[i]-x_1ul[i])+(y_2ul[i]-y_1ul[i])*(y_2ul[i]-y_1ul[i])+(z_2ul[i]-z_1ul[i])*(z_2ul[i]-z_1ul[i])); //real distance of atoms
+		d12i=absval(x_2ul[i]-x_1ul[i],y_2ul[i]-y_1ul[i],z_2ul[i]-z_1ul[i]);
+	//	printf("d12i: %12.5le\n",d12i);	
+		gx_1[i]=(x_1ul[i]-x_2ul[i])/d12i;
+		gy_1[i]=(y_1ul[i]-y_2ul[i])/d12i;
+		gz_1[i]=(z_1ul[i]-z_2ul[i])/d12i;
 
-	gx1[i]=(x1ul[i]-x2ul[i])/d12i;
-	gy1[i]=(y1ul[i]-y2ul[i])/d12i;
-	gz1[i]=(z1ul[i]-z2ul[i])/d12i;
-	
-	gx2[i]=-gx1;
-	gy2[i]=-gy1;
-	gz2[i]=-gz1;
+		gx_2[i]=-gx_1[i];
+		gy_2[i]=-gy_1[i];
+		gz_2[i]=-gz_1[i];
 	}
 }
 
 void r_last_new() {
+	int i;
 	for (i=0;i<n;i++) {
-		x1ul[i]=x1un[i];	
-		y1ul[i]=y1un[i];	
-		z1ul[i]=z1un[i];	
+		x_1ul[i]=x_1un[i];	
+		y_1ul[i]=y_1un[i];	
+		z_1ul[i]=z_1un[i];	
 		
-		x2ul[i]=x2un[i];	
-		y2ul[i]=y2un[i];	
-		z2ul[i]=z2un[i];	
+		x_2ul[i]=x_2un[i];	
+		y_2ul[i]=y_2un[i];	
+		z_2ul[i]=z_2un[i];	
+	}
+}
+void v_last_new() {
+	int i;
+	for (i=0;i<n;i++) {
+		vx_1ul[i]=vx_1un[i];	
+		vy_1ul[i]=vy_1un[i];	
+		vz_1ul[i]=vz_1un[i];	
+		
+		vx_2ul[i]=vx_2un[i];	
+		vy_2ul[i]=vy_2un[i];	
+		vz_2ul[i]=vz_2un[i];	
+	}
+}
+void r_last() {
+	int i;
+	for (i=0;i<n;i++) {
+		x_1ul[i]=x_1[i];	
+		y_1ul[i]=y_1[i];	
+		z_1ul[i]=z_1[i];	
+		
+		x_2ul[i]=x_2[i];	
+		y_2ul[i]=y_2[i];	
+		z_2ul[i]=z_2[i];	
+	}
+}
+void v_last() {
+	int i;
+	for (i=0;i<n;i++) {
+		vx_1ul[i]=vx_1[i];	
+		vy_1ul[i]=vy_1[i];	
+		vz_1ul[i]=vz_1[i];	
+		
+		vx_2ul[i]=vx_2[i];	
+		vy_2ul[i]=vy_2[i];	
+		vz_2ul[i]=vz_2[i];	
 	}
 }
 void r_new() {
+	int i;
 	for (i=0;i<n;i++) {
-		x1[i]=x1un[i];	
-		y1[i]=y1un[i];	
-		z1[i]=z1un[i];	
+		x_1[i]=x_1un[i];	
+		y_1[i]=y_1un[i];	
+		z_1[i]=z_1un[i];	
 		
-		x2[i]=x2un[i];	
-		y2[i]=y2un[i];	
-		z2[i]=z2un[i];	
+		x_2[i]=x_2un[i];	
+		y_2[i]=y_2un[i];	
+		z_2[i]=z_2un[i];	
 	}
 }
-
+void v_new() {
+	int i;
+	for (i=0;i<n;i++) {
+		vx_1[i]=vx_1un[i];	
+		vy_1[i]=vy_1un[i];	
+		vz_1[i]=vz_1un[i];	
+		
+		vx_2[i]=vx_2un[i];	
+		vy_2[i]=vy_2un[i];	
+		vz_2[i]=vz_2un[i];	
+	}
+}
 void move() {
 	double d12i,betr;
-	
+	int i;
 	//velocity verlet integration (force is 0 so there is no change in velocity. True with constraints??)
 	for (i=0;i<n;i++) {
-		x1ul[i]=2*x1[i]-dt*vx1[i];
-		y1ul[i]=2*y1[i]-dt*vy1[i];
-		z1ul[i]=2*z1[i]-dt*vz1[i];
+		x_1ul[i]=x_1[i]-dt*vx_1[i];
+		y_1ul[i]=y_1[i]-dt*vy_1[i];
+		z_1ul[i]=z_1[i]-dt*vz_1[i];
 		
-		x2ul[i]=2*x2[i]-dt*vx2[i];
-		y2ul[i]=2*y2[i]-dt*vy2[i];
-		z2ul[i]=2*z2[i]-dt*vz2[i];
+		x_2ul[i]=x_2[i]-dt*vx_2[i];
+		y_2ul[i]=y_2[i]-dt*vy_2[i];
+		z_2ul[i]=z_2[i]-dt*vz_2[i];
 	}
+	v_last();
 	do {
-		betr=0;
-		r_last_new();//save new x and overwrite the last x
+		betr=0.0;
+		grad_sig();//calculate the gradient of sigma unconstrained new for all molecules
+		get_lam();//calculate lambda for all molecules			
+		get_lamv();//calculate lambda for all molecules			
 		for(i=0;i<n;i++) {
-			grad_sig();//calculate the gradient of sigma unconstrained new
-			
-			//Rattle: change the coords according to the constraints
-			x1un[i]=x1ul[i]-dt*dt*lam*gx1[i];
-			y1un[i]=y1ul[i]-dt*dt*lam*gy1[i];
-			z1un[i]=z1ul[i]-dt*dt*lam*gz1[i];
-			
-			x2un[i]=x2ul[i]-dt*dt*lam*gx2[i];
-			y2un[i]=y2ul[i]-dt*dt*lam*gy2[i];
-			z2un[i]=z2ul[i]-dt*dt*lam*gz2[i];
-			
-			//compare the new and the last x, means calculate abs dist between vectors
-			betr=betr+sqrt((x1un[i]-x1ul[i])*(x1un[i]-x1ul[i])+(y1un[i]-y1ul[i])*(y1un[i]-y1ul[i])+(z1un[i]-z1ul[i])*(z1un[i]-z1ul[i]));
-		}
-		betr=betr/(double)n;
 		
-	}while(betr>eps);
-	r_new();
+			//Rattle: change the coords according to the constraints
+			x_1un[i]=x_1ul[i]-dt*dt*lam[i]*gx_1[i];
+			y_1un[i]=y_1ul[i]-dt*dt*lam[i]*gy_1[i];
+			z_1un[i]=z_1ul[i]-dt*dt*lam[i]*gz_1[i];
+			
+			x_2un[i]=x_2ul[i]-dt*dt*lam[i]*gx_2[i];
+			y_2un[i]=y_2ul[i]-dt*dt*lam[i]*gy_2[i];
+			z_2un[i]=z_2ul[i]-dt*dt*lam[i]*gz_2[i];
+			
+			vx_1un[i]=vx_1ul[i]-dt*dt*lamv*gx_1[i];
+			vy_1un[i]=vy_1ul[i]-dt*dt*lamv*gy_1[i];
+			vz_1un[i]=vz_1ul[i]-dt*dt*lamv*gz_1[i];
+			
+			vx_2un[i]=vx_2ul[i]-dt*dt*lamv*gx_2[i];
+			vy_2un[i]=vy_2ul[i]-dt*dt*lamv*gy_2[i];
+			vz_2un[i]=vz_2ul[i]-dt*dt*lamv*gz_2[i];
 				
+			//compare the new and the last x, means calculate abs dist between vectors
+			betr=betr+sqrt((x_1un[i]-x_1ul[i])*(x_1un[i]-x_1ul[i])+(y_1un[i]-y_1ul[i])*(y_1un[i]-y_1ul[i])+(z_1un[i]-z_1ul[i])*(z_1un[i]-z_1ul[i]));
+		}
+		r_last_new();//save new x and overwrite the last x
+		v_last_new();
+		betr=betr/(double)n;
+	//	printf("betr: %12.5le\n",betr);	
+	//	printf("lam: %12.5le\n",lam[0]);	
+	}while(betr>eps);
+//	printf("betr: %12.5le\n",betr);	
+	r_new();
+	v_new();	
+}
+
+void means() {
+	double d12_mean,u=0;
+	int i;
+	for(i=0;i<n;i++) {
+		u=u+(vx_1[i]*vx_1[i]+vy_1[i]*vy_1[i]+vz_1[i]*vz_1[i]+vx_2[i]*vx_2[i]+vy_2[i]*vy_2[i]+vz_2[i]*vz_2[i])/2.0;
+	}
+	for(i=0;i<n;i++) {
+		d12_mean=d12_mean+absval(x_1[i]-x_2[i],y_1[i]-y_2[i],z_1[i]-z_2[i]);
+	}
+	d12_mean=d12_mean/(double)n;
+	
+	u=u/(double)n;
+	printf("%10d\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\t%12.5le\n",nt,u,d12_mean,x_1[0],y_1[0],z_1[0],x_2[0],y_2[0],z_2[0],vx_1[0],vy_1[0],vz_1[0],vx_2[0],vy_2[0],vz_2[0]);
 }
 
 int main() {
-	
+	double abs,r1,r2,r3;
+	abs=absval(1.0,1.0,0.0);
+	r1=drand48();
+	r2=drand48();
+	r3=drand48();
+//	printf("rand: %12.5le\n",r1);
+//	printf("rand: %12.5le\n",r2);
+//	printf("rand: %12.5le\n",r3);
+	/* allcate arrays */
+	vx_1=(double*)malloc(n*sizeof(double));
+	vy_1=(double*)malloc(n*sizeof(double));
+	vz_1=(double*)malloc(n*sizeof(double));
 
+	vx_2=(double*)malloc(n*sizeof(double));
+	vy_2=(double*)malloc(n*sizeof(double));
+	vz_2=(double*)malloc(n*sizeof(double));
+
+	vx_1ul=(double*)malloc(n*sizeof(double));
+	vy_1ul=(double*)malloc(n*sizeof(double));
+	vz_1ul=(double*)malloc(n*sizeof(double));
+
+	vx_2ul=(double*)malloc(n*sizeof(double));
+	vy_2ul=(double*)malloc(n*sizeof(double));
+	vz_2ul=(double*)malloc(n*sizeof(double));
+
+	vx_1un=(double*)malloc(n*sizeof(double));
+	vy_1un=(double*)malloc(n*sizeof(double));
+	vz_1un=(double*)malloc(n*sizeof(double));
+
+	vx_2un=(double*)malloc(n*sizeof(double));
+	vy_2un=(double*)malloc(n*sizeof(double));
+	vz_2un=(double*)malloc(n*sizeof(double));
+
+	x_1=(double*)malloc(n*sizeof(double));
+	y_1=(double*)malloc(n*sizeof(double));
+	z_1=(double*)malloc(n*sizeof(double));
+
+	x_2=(double*)malloc(n*sizeof(double));
+	y_2=(double*)malloc(n*sizeof(double));
+	z_2=(double*)malloc(n*sizeof(double));
+
+	x_1ul=(double*)malloc(n*sizeof(double));
+	y_1ul=(double*)malloc(n*sizeof(double));
+	z_1ul=(double*)malloc(n*sizeof(double));
+
+	x_2ul=(double*)malloc(n*sizeof(double));
+	y_2ul=(double*)malloc(n*sizeof(double));
+	z_2ul=(double*)malloc(n*sizeof(double));
+
+	x_1un=(double*)malloc(n*sizeof(double));
+	y_1un=(double*)malloc(n*sizeof(double));
+	z_1un=(double*)malloc(n*sizeof(double));
+
+	x_2un=(double*)malloc(n*sizeof(double));
+	y_2un=(double*)malloc(n*sizeof(double));
+	z_2un=(double*)malloc(n*sizeof(double));
+
+	gx_1=(double*)malloc(n*sizeof(double));
+	gy_1=(double*)malloc(n*sizeof(double));
+	gz_1=(double*)malloc(n*sizeof(double));
+
+	gx_2=(double*)malloc(n*sizeof(double));
+	gy_2=(double*)malloc(n*sizeof(double));
+	gz_2=(double*)malloc(n*sizeof(double));
+
+
+	lam=(double*)malloc(n*sizeof(double));
+	sigu=(double*)malloc(n*sizeof(double));
+	M=(double*)malloc(n*sizeof(double));
+
+	init();
+	means();
+	for(nt=1;nt<=ntjob;nt++) {
+		move();
+		means();
+	}
 }
 
 
