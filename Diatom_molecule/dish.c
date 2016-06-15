@@ -24,14 +24,13 @@
 #include <string.h>
 
 /* Global Variables & Parameters */
-int n=1,nt=0,ntjob=10000;
-double V,l,d12=10;
-double roh=0.5,t=100,dt=1,eps=0.000001;
-double lamv;
+int n=1,nt=0,ntjob=100000;
+double V,l,d12=1;
+double roh=1,t=1,dt=0.001,eps=0.0000001;
 
 double *vx_1,*vy_1,*vz_1,*vx_2,*vy_2,*vz_2, *vx_1un,*vy_1un,*vz_1un,*vx_2un, *vy_2un, *vz_2un, *vx_1ul,*vy_1ul,*vz_1ul,*vx_2ul, *vy_2ul, *vz_2ul,*x_1,*y_1,*z_1,*x_2,*y_2,*z_2, *x_1ul, *y_1ul, *z_1ul,*x_2ul, *y_2ul, *z_2ul, *x_1un, *y_1un, *z_1un,*x_2un, *y_2un, *z_2un;
 double *gx_1,*gy_1,*gz_1,*gx_2,*gy_2,*gz_2;
-double *lam,*sigu,*M;
+double *lam,*sigu,*M,*lamv;
 
 double summe(double* array) {
 	int i;
@@ -140,10 +139,7 @@ void get_lamv() {
 		y_12=y_1ul[i]-y_2ul[i];
 		z_12=z_1ul[i]-z_2ul[i];
 		
-		lamv=(vx_12*x_12+vy_12*y_12+vz_12*z_12)/(2*(x_12*x_12+y_12*y_12+z_12*z_12));
-		
-		
-		
+		lamv[i]=(vx_12*x_12+vy_12*y_12+vz_12*z_12)/(2*(x_12*x_12+y_12*y_12+z_12*z_12));
 	}
 }
 void grad_sig() {
@@ -238,7 +234,7 @@ void v_new() {
 	}
 }
 void move() {
-	double d12i,betr;
+	double d12i,betr,betrv;
 	int i;
 	//velocity verlet integration (force is 0 so there is no change in velocity. True with constraints??)
 	for (i=0;i<n;i++) {
@@ -253,6 +249,7 @@ void move() {
 	v_last();
 	do {
 		betr=0.0;
+		betrv=0.0;
 		grad_sig();//calculate the gradient of sigma unconstrained new for all molecules
 		get_lam();//calculate lambda for all molecules			
 		get_lamv();//calculate lambda for all molecules			
@@ -267,23 +264,28 @@ void move() {
 			y_2un[i]=y_2ul[i]-dt*dt*lam[i]*gy_2[i];
 			z_2un[i]=z_2ul[i]-dt*dt*lam[i]*gz_2[i];
 			
-			vx_1un[i]=vx_1ul[i]-dt*dt*lamv*gx_1[i];
-			vy_1un[i]=vy_1ul[i]-dt*dt*lamv*gy_1[i];
-			vz_1un[i]=vz_1ul[i]-dt*dt*lamv*gz_1[i];
+			vx_1un[i]=vx_1ul[i]-dt*dt*lamv[i]*gx_1[i];
+			vy_1un[i]=vy_1ul[i]-dt*dt*lamv[i]*gy_1[i];
+			vz_1un[i]=vz_1ul[i]-dt*dt*lamv[i]*gz_1[i];
 			
-			vx_2un[i]=vx_2ul[i]-dt*dt*lamv*gx_2[i];
-			vy_2un[i]=vy_2ul[i]-dt*dt*lamv*gy_2[i];
-			vz_2un[i]=vz_2ul[i]-dt*dt*lamv*gz_2[i];
+			vx_2un[i]=vx_2ul[i]-dt*dt*lamv[i]*gx_2[i];
+			vy_2un[i]=vy_2ul[i]-dt*dt*lamv[i]*gy_2[i];
+			vz_2un[i]=vz_2ul[i]-dt*dt*lamv[i]*gz_2[i];
 				
 			//compare the new and the last x, means calculate abs dist between vectors
 			betr=betr+sqrt((x_1un[i]-x_1ul[i])*(x_1un[i]-x_1ul[i])+(y_1un[i]-y_1ul[i])*(y_1un[i]-y_1ul[i])+(z_1un[i]-z_1ul[i])*(z_1un[i]-z_1ul[i]));
+			betrv=betrv+sqrt((vx_1un[i]-vx_1ul[i])*(vx_1un[i]-vx_1ul[i])+(vy_1un[i]-vy_1ul[i])*(vy_1un[i]-vy_1ul[i])+(vz_1un[i]-vz_1ul[i])*(vz_1un[i]-vz_1ul[i]));
 		}
 		r_last_new();//save new x and overwrite the last x
 		v_last_new();
+		get_lamv();//calculate lambda for all molecules			
+	
 		betr=betr/(double)n;
+		betrv=betrv/(double)n;
+
 	//	printf("betr: %12.5le\n",betr);	
 	//	printf("lam: %12.5le\n",lam[0]);	
-	}while(betr>eps);
+	}while((betrv>eps)||(betr>eps));
 //	printf("betr: %12.5le\n",betr);	
 	r_new();
 	v_new();	
@@ -305,11 +307,6 @@ void means() {
 }
 
 int main() {
-	double abs,r1,r2,r3;
-	abs=absval(1.0,1.0,0.0);
-	r1=drand48();
-	r2=drand48();
-	r3=drand48();
 //	printf("rand: %12.5le\n",r1);
 //	printf("rand: %12.5le\n",r2);
 //	printf("rand: %12.5le\n",r3);
@@ -372,6 +369,7 @@ int main() {
 
 
 	lam=(double*)malloc(n*sizeof(double));
+	lamv=(double*)malloc(n*sizeof(double));
 	sigu=(double*)malloc(n*sizeof(double));
 	M=(double*)malloc(n*sizeof(double));
 
