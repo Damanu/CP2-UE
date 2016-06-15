@@ -22,14 +22,16 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 /* Global Variables & Parameters */
-int n=1,nt=0,ntjob=100000;
-double V,l,d12=1;
-double roh=1,t=1,dt=0.001,eps=0.0000001;
+int n=1,nt=0,ntjob=20000,iter=1000;
+double V,l,d12=10;
+double roh=1,t=1,dt=0.00001,eps=0.0000001;
 
 double *vx_1,*vy_1,*vz_1,*vx_2,*vy_2,*vz_2, *vx_1un,*vy_1un,*vz_1un,*vx_2un, *vy_2un, *vz_2un, *vx_1ul,*vy_1ul,*vz_1ul,*vx_2ul, *vy_2ul, *vz_2ul,*x_1,*y_1,*z_1,*x_2,*y_2,*z_2, *x_1ul, *y_1ul, *z_1ul,*x_2ul, *y_2ul, *z_2ul, *x_1un, *y_1un, *z_1un,*x_2un, *y_2un, *z_2un;
 double *gx_1,*gy_1,*gz_1,*gx_2,*gy_2,*gz_2;
+double *gx_1_dt,*gy_1_dt,*gz_1_dt,*gx_2_dt,*gy_2_dt,*gz_2_dt;
 double *lam,*sigu,*M,*lamv;
 
 double summe(double* array) {
@@ -149,17 +151,36 @@ void grad_sig() {
 	for(i=0;i<n;i++) {
 
 		//	d12i=sqrt((x_2ul[i]-x_1ul[i])*(x_2ul[i]-x_1ul[i])+(y_2ul[i]-y_1ul[i])*(y_2ul[i]-y_1ul[i])+(z_2ul[i]-z_1ul[i])*(z_2ul[i]-z_1ul[i])); //real distance of atoms
-		d12i=absval(x_2ul[i]-x_1ul[i],y_2ul[i]-y_1ul[i],z_2ul[i]-z_1ul[i]);
+		d12i=absval(x_2[i]-x_1[i],y_2[i]-y_1[i],z_2[i]-z_1[i]);
 	//	printf("d12i: %12.5le\n",d12i);	
-		gx_1[i]=(x_1ul[i]-x_2ul[i])/d12i;
-		gy_1[i]=(y_1ul[i]-y_2ul[i])/d12i;
-		gz_1[i]=(z_1ul[i]-z_2ul[i])/d12i;
+		gx_1[i]=(x_1[i]-x_2[i])/d12i;
+		gy_1[i]=(y_1[i]-y_2[i])/d12i;
+		gz_1[i]=(z_1[i]-z_2[i])/d12i;
 
 		gx_2[i]=-gx_1[i];
 		gy_2[i]=-gy_1[i];
 		gz_2[i]=-gz_1[i];
 	}
 }
+void grad_sig_dt() {
+	int i;
+	double d12i;
+	//calculate gradient of sigma for both atoms
+	for(i=0;i<n;i++) {
+
+		//	d12i=sqrt((x_2ul[i]-x_1ul[i])*(x_2ul[i]-x_1ul[i])+(y_2ul[i]-y_1ul[i])*(y_2ul[i]-y_1ul[i])+(z_2ul[i]-z_1ul[i])*(z_2ul[i]-z_1ul[i])); //real distance of atoms
+		d12i=absval(x_2ul[i]-x_1ul[i],y_2ul[i]-y_1ul[i],z_2ul[i]-z_1ul[i]);
+	//	printf("d12i: %12.5le\n",d12i);	
+		gx_1_dt[i]=(x_1ul[i]-x_2ul[i])/d12i;
+		gy_1_dt[i]=(y_1ul[i]-y_2ul[i])/d12i;
+		gz_1_dt[i]=(z_1ul[i]-z_2ul[i])/d12i;
+
+		gx_2_dt[i]=-gx_1_dt[i];
+		gy_2_dt[i]=-gy_1_dt[i];
+		gz_2_dt[i]=-gz_1_dt[i];
+	}
+}
+
 
 void r_last_new() {
 	int i;
@@ -264,13 +285,13 @@ void move() {
 			y_2un[i]=y_2ul[i]-dt*dt*lam[i]*gy_2[i];
 			z_2un[i]=z_2ul[i]-dt*dt*lam[i]*gz_2[i];
 			
-			vx_1un[i]=vx_1ul[i]-dt*dt*lamv[i]*gx_1[i];
-			vy_1un[i]=vy_1ul[i]-dt*dt*lamv[i]*gy_1[i];
-			vz_1un[i]=vz_1ul[i]-dt*dt*lamv[i]*gz_1[i];
+			vx_1un[i]=vx_1ul[i]+dt*lam[i]*gx_1[i]+dt/2*lamv[i]*gx_1_dt[i];
+			vy_1un[i]=vy_1ul[i]+dt*lam[i]*gy_1[i]+dt/2*lamv[i]*gy_1_dt[i];
+			vz_1un[i]=vz_1ul[i]+dt*lam[i]*gz_1[i]+dt/2*lamv[i]*gz_1_dt[i];
 			
-			vx_2un[i]=vx_2ul[i]-dt*dt*lamv[i]*gx_2[i];
-			vy_2un[i]=vy_2ul[i]-dt*dt*lamv[i]*gy_2[i];
-			vz_2un[i]=vz_2ul[i]-dt*dt*lamv[i]*gz_2[i];
+			vx_2un[i]=vx_2ul[i]+dt*lam[i]*gx_2[i]+dt/2*lamv[i]*gx_2_dt[i];
+			vy_2un[i]=vy_2ul[i]+dt*lam[i]*gy_2[i]+dt/2*lamv[i]*gy_2_dt[i];
+			vz_2un[i]=vz_2ul[i]+dt*lam[i]*gz_2[i]+dt/2*lamv[i]*gz_2_dt[i];
 				
 			//compare the new and the last x, means calculate abs dist between vectors
 			betr=betr+sqrt((x_1un[i]-x_1ul[i])*(x_1un[i]-x_1ul[i])+(y_1un[i]-y_1ul[i])*(y_1un[i]-y_1ul[i])+(z_1un[i]-z_1ul[i])*(z_1un[i]-z_1ul[i]));
@@ -290,7 +311,6 @@ void move() {
 	r_new();
 	v_new();	
 }
-
 void means() {
 	double d12_mean,u=0;
 	int i;
@@ -307,6 +327,9 @@ void means() {
 }
 
 int main() {
+	int i;
+	double time;
+	clock_t t;
 //	printf("rand: %12.5le\n",r1);
 //	printf("rand: %12.5le\n",r2);
 //	printf("rand: %12.5le\n",r3);
@@ -367,17 +390,32 @@ int main() {
 	gy_2=(double*)malloc(n*sizeof(double));
 	gz_2=(double*)malloc(n*sizeof(double));
 
+	gx_1_dt=(double*)malloc(n*sizeof(double));
+	gy_1_dt=(double*)malloc(n*sizeof(double));
+	gz_1_dt=(double*)malloc(n*sizeof(double));
+
+	gx_2_dt=(double*)malloc(n*sizeof(double));
+	gy_2_dt=(double*)malloc(n*sizeof(double));
+	gz_2_dt=(double*)malloc(n*sizeof(double));
+
 
 	lam=(double*)malloc(n*sizeof(double));
 	lamv=(double*)malloc(n*sizeof(double));
 	sigu=(double*)malloc(n*sizeof(double));
 	M=(double*)malloc(n*sizeof(double));
 
-	init();
-	means();
-	for(nt=1;nt<=ntjob;nt++) {
-		move();
-		means();
+	for(i=0;i<iter;i++) {
+		init();
+		t=clock();
+//		means();
+		for(nt=1;nt<=ntjob;nt++) {
+			move();
+//			means();
+		}
+		t=clock() -t;
+		time = ((double)t)/CLOCKS_PER_SEC;//time in seconds
+		printf("%12.5le\t%12.5le\n",eps,time);
+		eps=eps+1/(double)iter;
 	}
 }
 
